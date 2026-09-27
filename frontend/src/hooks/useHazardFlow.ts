@@ -1,8 +1,40 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useHazardTicketStore } from "../stores/HazardTicketStore";
 
-export function useHazardFlow<T>(rows: T[] = []) {
-  const [page, setPage] = useState(1);
-  const pageSize = 8;
-  const pageRows = useMemo(() => rows.slice((page - 1) * pageSize, page * pageSize), [rows, page]);
-  return { page, setPage, pageSize, pageRows, total: rows.length };
+export function useHazardFlow() {
+  const close = useHazardTicketStore((state) => state.close);
+  const [closingId, setClosingId] = useState<number | null>(null);
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const begin = (ticketId: number) => {
+    setClosingId(ticketId);
+    setNote("");
+    setError("");
+  };
+
+  const cancel = () => {
+    setClosingId(null);
+    setNote("");
+    setError("");
+  };
+
+  const confirm = async () => {
+    if (closingId === null) return false;
+    setBusy(true);
+    setError("");
+    try {
+      await close(closingId, note);
+      cancel();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { closingId, note, setNote, error, busy, begin, cancel, confirm };
 }

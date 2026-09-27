@@ -1,0 +1,1 @@
+RectifyStatus = ["PENDING", "RECTIFYING", "CLOSED"]

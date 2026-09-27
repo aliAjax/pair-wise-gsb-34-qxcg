@@ -57,6 +57,16 @@ backend/src/routes, controllers, services, models, repositories, middlewares, co
 - DeviceType: constants/DeviceType、types/DeviceType、constructors、logTemplates、errorMessages、筛选器、展示组件/控制器均有引用。
 - InspectionStatus: constants/InspectionStatus、types/InspectionStatus、constructors、logTemplates、errorMessages、筛选器、展示组件/控制器均有引用。
 - HazardSeverity: constants/HazardSeverity、types/HazardSeverity、constructors、logTemplates、errorMessages、筛选器、展示组件/控制器均有引用。
+- DeviceStatus（NORMAL / PENDING_RECTIFY）: constants/DeviceStatus、types/DeviceStatus、constants/ChecklistItem、backend constants/device_status、设备台账与合规总览的状态徽章均有引用。
+- ResultStatus（NORMAL / ABNORMAL）: constants/ResultStatus、types/ResultStatus、ChecklistPanel、backend constants/result_status、巡检提交服务均有引用。
+- RectifyStatus（PENDING / RECTIFYING / CLOSED）: constants/RectifyStatus、types/RectifyStatus、backend constants/rectify_status、隐患整改页与合规总览统计均有引用。
+
+## 核心业务闭环
+
+1. 巡检员在「巡检任务」页选择任务，对楼栋内每台设备逐项录入结果（正常/异常、实测值、备注、隐患等级），提交到 `POST /api/inspection-task/{id}/submit`。
+2. 后端逐项落库 InspectionResult；只要有一项异常，就为该结果生成一张 HazardTicket（同一结果的未关闭隐患单已存在时跳过，重复提交不会产生重复隐患），并把设备状态置为 PENDING_RECTIFY（待整改）。
+3. 维护人员在「隐患整改」页复验通过后调用 `POST /api/hazard-ticket/{id}/close` 关闭隐患单；若该设备没有其他未关闭隐患单，设备恢复为 NORMAL。
+4. 「消防合规总览」的待整改隐患数 = 未关闭（rectify_status ≠ CLOSED）的隐患单数量，随提交和关闭实时变化。
 
 ## 为什么会牵一发动全身
 

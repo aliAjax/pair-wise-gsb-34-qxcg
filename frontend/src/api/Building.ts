@@ -1,10 +1,10 @@
-import { mockData } from "../mocks/seedData";
+import { mockDb } from "../mocks/mockDb";
 import type { Building } from "../types/Building";
 
 const endpoint = "/api/building";
 
 export async function listBuilding(): Promise<Building[]> {
-  if (typeof fetch !== "undefined" && endpoint.startsWith("/api") && true) {
+  if (typeof fetch !== "undefined" && endpoint.startsWith("/api")) {
     try {
       const res = await fetch(endpoint);
       if (res.ok) return await res.json();
@@ -12,7 +12,7 @@ export async function listBuilding(): Promise<Building[]> {
       // Local mock fallback keeps the UI available during offline review.
     }
   }
-  return [...(mockData.building as unknown as Building[])];
+  return [...mockDb.building];
 }
 
 export async function saveBuilding(payload: Building) {
