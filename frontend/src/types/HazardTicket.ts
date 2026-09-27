@@ -1,3 +1,5 @@
+import type { FireDevice } from "./FireDevice";
+
 export interface HazardTicket {
   id: number;
   result_id: number;
@@ -7,4 +9,10 @@ export interface HazardTicket {
   rectify_status: string;
   rectify_note: string;
   closed_at: string;
+}
+
+export interface CloseHazardTicketSummary {
+  ticket: HazardTicket;
+  device?: FireDevice;
+  already_closed: boolean;
 }

@@ -1,4 +1,4 @@
-import { mockData } from "../mocks/seedData";
+import { localDb } from "../mocks/localDb";
 import type { InspectionResult } from "../types/InspectionResult";
 
 const endpoint = "/api/inspection-result";
@@ -12,7 +12,7 @@ export async function listInspectionResult(): Promise<InspectionResult[]> {
       // Local mock fallback keeps the UI available during offline review.
     }
   }
-  return [...(mockData.inspectionResult as unknown as InspectionResult[])];
+  return [...localDb.inspectionResult];
 }
 
 export async function saveInspectionResult(payload: InspectionResult) {

@@ -18,8 +18,27 @@ cp .env.example .env && docker compose up -d
 ## 本地开发方式
 
 - 前端：`cd frontend && npm install && npm run dev`
-- 后端：进入 `backend` 后按技术栈运行开发命令，接口统一挂在 `/api`。
+- 后端：`cd backend && pip install -r requirements.txt && uvicorn src.main:app --reload --port 8000`，接口统一挂在 `/api`。
 
+## 核心业务流（巡检 → 隐患 → 复验）
+
+1. **逐项录入与提交**：巡检任务页选中任务后，按设备逐项录入检查结果（正常/异常、实测值、备注），`POST /api/inspection-task/{id}/submit` 提交。
+2. **隐患自动生成**：提交结果中只要有一件设备异常，就为该异常结果生成一张隐患整改单（严重度按设备类型缺省），并把设备状态置为 `PENDING_RECTIFY`（待整改）。
+3. **幂等提交**：巡检结果按 `(task_id, device_id, item_code)` 覆盖更新，隐患单按 `result_id` 唯一；同一任务重复提交不会产生重复隐患单（已关闭的单据会被重新打开而不是新建）。
+4. **复验关闭**：隐患整改页对 `OPEN` 单据执行“复验通过并关闭”（`POST /api/hazard-ticket/{id}/close`），该设备上没有其他待整改隐患时恢复为 `NORMAL`；重复关闭幂等返回。
+5. **总览联动**：合规总览的“待整改隐患 / 待整改设备 / 逾期整改”统计直接消费同一批 store，提交或关闭后数量即时变化。
+
+### 接口一览
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/inspection-task` | 任务列表 |
+| POST | `/api/inspection-task/{id}/submit` | 逐项录入并提交（幂等） |
+| GET | `/api/hazard-ticket` | 隐患单列表 |
+| POST | `/api/hazard-ticket/{id}/close` | 复验通过并关闭（幂等） |
+| GET | `/api/fire-device` `/api/inspection-result` `/api/building` | 台账/结果/楼栋列表 |
+
+写操作按角色控制（请求头 `x-role`，默认 `admin`）：提交需 `inspector`/`admin`，关闭需 `maintainer`/`admin`。
 
 ## 技术栈
 
@@ -54,9 +73,12 @@ backend/src/routes, controllers, services, models, repositories, middlewares, co
 
 ## 枚举/常量出现位置清单
 
-- DeviceType: constants/DeviceType、types/DeviceType、constructors、logTemplates、errorMessages、筛选器、展示组件/控制器均有引用。
-- InspectionStatus: constants/InspectionStatus、types/InspectionStatus、constructors、logTemplates、errorMessages、筛选器、展示组件/控制器均有引用。
-- HazardSeverity: constants/HazardSeverity、types/HazardSeverity、constructors、logTemplates、errorMessages、筛选器、展示组件/控制器均有引用。
+- DeviceType: 前端 `constants/DeviceType.ts`（含 `DeviceTypeItemCode` 检查项映射）、`types/DeviceType.ts`；后端 `constants/device_type.py`；构造器、logTemplates、errorMessages、设备筛选与展示组件均有引用。
+- InspectionStatus: 前端 `constants/InspectionStatus.ts`、`types/InspectionStatus.ts`；后端 `constants/inspection_status.py`；构造器、logTemplates、errorMessages、任务筛选与展示组件均有引用。
+- HazardSeverity: 前端 `constants/HazardSeverity.ts`（含 `DEFAULT_SEVERITY_BY_DEVICE_TYPE`）、`types/HazardSeverity.ts`；后端 `constants/hazard_severity.py`；构造器、logTemplates、errorMessages、`HazardSeverityTag`、`utils/formatters.formatRisk` 均有引用。
+- DeviceStatus（NORMAL / PENDING_RECTIFY）: 前端 `constants/DeviceStatus.ts`；后端 `constants/device_status.py`；`inspection_task_service.submit`、`hazard_ticket_service.close`、设备台账与合规总览均有引用。
+- ResultStatus（NORMAL / ABNORMAL）: 前端 `constants/ResultStatus.ts`；后端 `constants/result_status.py`；`ChecklistPanel`、`useChecklistProgress`、`inspection_task_service` 均有引用。
+- RectifyStatus（OPEN / CLOSED）: 前端 `constants/RectifyStatus.ts`；后端 `constants/rectify_status.py`；隐患整改页、合规总览统计、`hazard_ticket_service` 均有引用。
 
 ## 为什么会牵一发动全身
 

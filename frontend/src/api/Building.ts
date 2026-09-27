@@ -1,4 +1,4 @@
-import { mockData } from "../mocks/seedData";
+import { localDb } from "../mocks/localDb";
 import type { Building } from "../types/Building";
 
 const endpoint = "/api/building";
@@ -12,7 +12,7 @@ export async function listBuilding(): Promise<Building[]> {
       // Local mock fallback keeps the UI available during offline review.
     }
   }
-  return [...(mockData.building as unknown as Building[])];
+  return [...localDb.building];
 }
 
 export async function saveBuilding(payload: Building) {

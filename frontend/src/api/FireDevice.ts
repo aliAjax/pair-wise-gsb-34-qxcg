@@ -1,4 +1,4 @@
-import { mockData } from "../mocks/seedData";
+import { localDb } from "../mocks/localDb";
 import type { FireDevice } from "../types/FireDevice";
 
 const endpoint = "/api/fire-device";
@@ -12,7 +12,7 @@ export async function listFireDevice(): Promise<FireDevice[]> {
       // Local mock fallback keeps the UI available during offline review.
     }
   }
-  return [...(mockData.fireDevice as unknown as FireDevice[])];
+  return [...localDb.fireDevice];
 }
 
 export async function saveFireDevice(payload: FireDevice) {
